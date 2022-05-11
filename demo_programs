@@ -1,0 +1,57 @@
+Demo program:
+
+(setq initialList '(4 2 5 2 4 6 7 1))
+
+; currying example
+(functype moreThanX (int (int)))
+(func moreThanX (x lst) (
+	(cond (isepmty lst) ‘()
+	(let first (head lst))
+	(let restLst (tail lst))
+	(cond (greater first x) 
+(cons first restLst)
+restLst
+)))
+
+(setq moreThan5 (moreThanX 5)) ; moreThan5 can be considered as a function similar to moreThanX, but the first argument is already passed as 5.
+(setq listResult (moreThan5 initialList))
+; listResult will have values '(6 7)
+
+
+; pattern matching example
+(data (Maybe x) (Just x) (Nothing))
+
+(functype isValueExist ((Maybe a) boolean))
+(func isValueExist (value)
+(case value
+((Just x) true)
+((Nothing) false)
+)
+)
+
+; sorting example
+(functype getMinElement ((int) int))	
+(functype removeElement (int (int) (int)))
+(functype sort ((int) (int)))
+
+(func getMinElement (lst)
+(cond (isempty (tail lst))
+ 		(head lst)
+ 		(cond (less (head lst) (getMinElement (tail lst)))
+ 		(head lst)
+ 	(getMinElement (tail lst))))
+)
+
+(func removeElement (el lst)
+(cond (equal (head lst) el) (tail lst) (cons (head lst) (removeElement el (tail lst))))
+)
+
+(func sort (lst)
+(cond (isempty (tail lst))
+ 	lst
+(cons (getMinElement lst) (sort (removeElement (getMinElement lst) lst)) )
+)
+)
+
+(setq sortedList (sort initialList))
+sortedList
