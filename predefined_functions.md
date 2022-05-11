@@ -1,0 +1,1 @@
+quote, setq, func, lambda, prog, cond, while, return, break, plus, minus, times, divide, head, tail, cons, equal, nonequal, less, lesseq, greater, greatereq, isint, isreal, isbool, isnull, isatom, islist, and, or, xor, not, eval, isempty, length, map, filter, foldl.
