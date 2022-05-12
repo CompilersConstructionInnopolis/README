@@ -74,6 +74,7 @@ Language has general-purpose types that are built into it:
 * Boolean type (`Boolean`)
 * Unit type (`Unit`). It indicates that a function will return nothing. 
 * String type (`String`). Any symbols
+* Any type (`Any`). Parent of all types.
 * Homogeneous lists
 * Heterogeneous tuples. The tuple should have more than 1 element.
 
