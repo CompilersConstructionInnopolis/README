@@ -92,11 +92,11 @@ Language has general-purpose types that are built into it:
 # Standard Library
 
 Our standart library will be substituted by such definitions:
-* `map`
-* `filter`
-* `foldl`
-* `length` - Type is: `((_) -> Int)`
-* `isempty` - Type is: `((_) -> Boolean)`
+* `map` - Type is: `((Any -> Any) (Any) -> (Any))`
+* `filter` - Type is: `((Any -> Boolean) (Any) -> (Any))`
+* `foldl` - Type is: `((Any Any -> Any) Any (Any) -> (Any))`
+* `length` - Type is: `((Any) -> Int)`
+* `isempty` - Type is: `((Any) -> Boolean)`
 
 To import standart library you need to write in source code:
 
@@ -255,9 +255,9 @@ Logical operators
 
 Comparisons
 ```
-(functype equal (T T -> Boolean))
-(nonequal false (T T -> Boolean))
-(nonequal (T T -> Boolean))
+(functype equal (Any Any -> Boolean))
+(nonequal false (Any Any -> Boolean))
+(nonequal (Any Any -> Boolean))
 (less (Num Num -> Boolean))
 (lesseq (Num Num -> Boolean))
 (greater (Num Num -> Boolean))
@@ -309,10 +309,10 @@ For function arguments we denote a list as `(T)` where `T` - is the list type.
  
 Operations on list
 ```
-(functype cons (T (T) -> (T)))
-(functype tail ((T) -> (T)))
-(functype isempty ((T) -> Boolean))
-(functype length ((T) -> Int))
+(functype cons (Any (Any) -> (Any)))
+(functype tail ((Any) -> (Any)))
+(functype isempty ((Any) -> Boolean))
+(functype length ((Any) -> Int))
 
 (cons 3 ()); returns a list with one element (3)
 (cons 1 (2 3)); returns a list (1 2 3)
