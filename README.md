@@ -498,4 +498,27 @@ You can test the interpreter on this [website](https://plus-plus-plus.netlify.ap
 
 (setq sortedList (sort initialList))
 sortedList
+
+
+(func getMax (currentMax list)
+    (cond (isempty list)
+        currentMax
+        (let 
+            (
+                (first (head list))
+                (restList (tail list))
+            )
+            (cond (greater first currentMax)
+                (getMax first restList)
+                (getMax currentMax restList))
+        )    
+    )
+)
+
+
+(define superMaxElement Auto)
+(setq superMaxElement (getMax (head sortedList) (tail sortedList)))
+
+(functype getMaxElementTwice (Unit -> Auto))
+(func getMaxElementTwice () (times 2 (getMax (head sortedList) (tail sortedList))))
 ```
