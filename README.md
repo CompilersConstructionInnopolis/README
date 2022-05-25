@@ -1,49 +1,38 @@
 # Team C++
-- **Mikhail Martovitsky** - implement a standard library of predefined functions
-- **Roman Soldatov** - language features developer
-- **Timur Nugaev** - tester & test writer
+
 - **Daniil Livitin** - language features developer
+- **Roman Soldatov** - language features developer
+- **Mikhail Martovitsky** - implement a standard library and predefined functions. Online compiler Backend developer.
+- **Timur Nugaev** - tester & test writer. Online compiler Frontend developer.
+
+## Links
+- The [link](https://github.com/CompilersConstructionInnopolis/ACCPA) to the source code.
+- The [link](https://github.com/CompilersConstructionInnopolis/README) to the readme with language documentation
+- The [organisation](https://github.com/CompilersConstructionInnopolis) with repositories.
 
 # Language Plus++
 
 - Functional Lisp-like language with static type system. 
-- The language is not purely functional. E.g. variables might change their values inside the function call.
+- The language is not purely functional.
 
-# Build project
-
-***Instructions for building the project***
-
- 
-1. Сlone a repository of our project.
-2. Navigate to the folder of the project using the terminal.
-3. Run the command `mvn clean install`. This command will create a ‘target’ folder and an executable .jar file inside.
- 
-***Instructions for using the prototype***
-
-1. Create a build of the application (see previous step)
-2. Navigate to the created ‘target’ folder.
-3. Run a command: `java -jar Compilers_Innopolis-1.0-SNAPSHOT.jar ../Tests/program.txt`
-	
-> Note: before running a command you need to enter a code of the program inside Tests/program.txt file.
-
-
-# Interpreter
-
-In the [interpreter](https://github.com/CompilersConstructionInnopolis/ACCPA/tree/main/src/main/java/interpreter) package there are classes related to AST interpretation.
-
-* [AtomsTable.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/AtomsTable.java) saves defined atoms and their values. This class is represented as a singleton. Atoms are stored in some local context. Atoms with similar name shadows atoms from outer scope. Each local context is perpesented as a HashMap. The hirerachy of local contexts is presented as a Stack. When you enter into some function or loop the interpreter calls `introduceLocalContext()` function to create a new temporary local context which will be deleted after leaving the form (`leaveLocalContext()` will be called).
-* [FunctionsTable.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/FunctionsTable.java) is similar to [AtomsTable.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/AtomsTable.java), but it stores defined user-functions.
-* [PredefinedFunction.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/PredefinedFunction.java) and [DefinedFunction.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/DefinedFunction.java) classes are utility functions to interpret a list as a function call and evaluate it.
+The language represents a sequence of elements. Elements can be:
+- **List**. The sequence of elements. They can be considered as just a sequence of homogenous elements or a list can be of a special form which represents a list as a function. In this case elements don't require to have the same type. The special form of a list is an S-expression, so each element is evalutated before a function call.
+- **Literal**. The basic values such as integers, doubles, booleans and strings.
+- **Atom**. Identifier of a variable which can be assigned to a literal or a list. Identifier can be written with a use of letters, digits and underscore. The name can't start with a digit and it must contain at least one letter.
+- **Function type**. A function declaration of input argument types and return type separated by `->`
+- **Tuple**. A sequence of heterogeneous elements separated by comma `,`.
 
 # Grammar
 
 ```
 Program : Element { Element } 
 List : ( Element { Element } ) 
-Element : Atom | Literal | List 
+Element : Atom | Literal | List | Tuple | Functype
 Atom : Identifier
-Literal : [+|-] Integer | [+|-] Double | Boolean | String | null 
-Identifier : Letter { Letter | DecimalDigit }
+Literal : [+|-] Integer | [+|-] Double | Boolean | String
+Tuple : (Element , Element {, Element})
+Functype : (Element {Element} -> Element)
+Identifier : { _ } Letter { Letter | DecimalDigit | _ }
 Letter : Any Unicode character that represents a letter 
 Integer : DecimalDigit { DecimalDigit }
 DecimalDigit : 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 
@@ -54,85 +43,129 @@ Characters: { Letter }
 ```
 
 # Type Checker
+- Before interpretation complier runs the type checker which analasis AST asking each node it's type. Connected nodes compare their expected types with actual or infere them. Each node has set of rules which type of arguments it expects and what type of an argument it should return. For example, if the node is a condition which accepts a single argument of type boolean and returns some node of any type, then we take into account several things  `(cond BooleanCondition TrueBranch FalseBranch`:
+- `cond` has three children nodes that are represent branches(`TrueBranch` and `FalseBranch`) and `BooleanCondition`.
+- `BooleanCondition` node must return boolean.
+- Branches must return the same type. For this purpose we recursively check what each branch returns and then compare types.
+- The parant node (which calls `cond`) must provide external atom argument for `cond` of type boolean. Also, this parent node knows what `cond` returns since we checked it's branches. Therefore, we can conclude what the parent node should return. Thus, if we know that e.g. `cond` returns `Int`, but its parent node should return `Double`, then it's types error which we detected during the compilation.
+- if the node has `Auto` type, but it's children or parent provides some defined type for it (e.g. `String`). Then we can conclude that argument's type `Auto` is actually a String. That's how the type infrence works.
+
+In compiler implementation, to check that connected nodes passes and returns arguments of expected types, each AST node has the following methods
+```
+List<NodeType> getArgumentType(); // Get a list of argument types which node accepts
+void setArgumentType(List<NodeType>); // Set a list of argument types which node should accept. Call this method for type inference (if node had Auto type)
+NodeType getReturnType(); // Get a type of return type
+void setReturnType(NodeType type); // Set return type which node should provide. Call this method for type inference (if node had Auto type)
+```
 
 ## Check whether the typing is correct
 - For the `function` we should check if the provided arguments are the same types as declared in the `functype` keyword.
 If the argument is not Base type then we should recursively get the type of argument.
-- For the variable we can use `define` keyword to specify variable's type.
-
+- For the variable (atom) we can use `define` keyword to specify variable's type.
+- If the function accepts or return an atom of type `Any` or `Num` then it can be used for different arguments types (`Int` and `Double` will be acceptable for `Num`). In this case, possible excpetions would be detected only during the runtime.
 
 ## Infer the type of expressions
 
 In our language type annotation in the source code is optional. 
-If type is not specified explicitly then it should be inferred by interpreter automatically. 
+If type is not specified explicitly then it should be inferred by interpreter automatically. Alternatively, you can specify a type as unknown using `Auto`.
 
+- if the node's argument or the return type is `Auto` and such node does not have special rules of required types (*e.g. the `cond` has a rule that condition has a type of boolean*) and its connected nodes also can't conclude their required types then the type inference won't work during the compile time. So, it's not possible to traverse through nodes and detect their types if everything has type `Auto`.
+- if connected nodes have types `Any` and `Auto` then `Auto` could be only resolved as type of `Any`. However, we could get an type exception during the runtime because type checker was not be able to check these generic types.
 
 # Base Types
 
 Language has general-purpose types that are built into it:
 * Numeric types (`Int`, `Double`, `Num` - parent class of `Int` and `Double`)
+    - `Int` - integer number
+    - `Double` - number with floating point
+    - `Num` - can be acceptable either `Int`, or `Double`
 * Boolean type (`Boolean`)
-* Unit type (`Unit`). It indicates that a function will return nothing. 
-* String type (`String`). Any symbols
-* Any type (`Any`). Parent of all types.
-* Homogeneous lists
-* Heterogeneous tuples. The tuple should have more than 1 element.
+    - `Boolean` - has values: `true`, `false`
+* Unit type (`Unit`). It indicates that a function accepts or returns nothing. 
+* String type (`String`). Any symbols between quotes signs "..."
+* Any type (`Any`). Parent of all types. It can be used in functions in which we don't care of variable's type.
+* Homogeneous lists. A list is a sequence of elements separated by whitespaces and enclosed by parentheses. However, there are two types of lists in general.
+    1. The list with elements with the same type. So, this list is just simple list of elements.
+    2. However, list can be interpreted as an S-expression. So, compiler considers this list as a **function**. We call such list as a list with a special form. A list with a special form has the same syntax, but it is condidered as a function definition or a function call. It's elements don't require to have the same type (since it's not a simple sequence of homogeneous elements). Therefore, such list doesn't support classic operations on a list (e.g. `cons`, `tail`) since it represents a function.
+        - **Function definition**
+            - The first element is an atom representing the function name
+            - The second element is a list of arguments
+            - The third element is the function body
+        - **Function call**
+            - The first element is an atom representing the function name
+            - The second element is a list of arguments
+    
+* Heterogeneous tuples. The tuple should have more than 1 element. The difference between tuples and lists is that tuple's elements are separated by comma. 
 
 
 # User-defined Terms and Types
 
 * User can define aliases with a use of primitives.
+* Aliases can be defined in a local scope.
 ```
 (type Seconds Int)
 (type Minutes Int)
 
-(functype GetMinutes (Int -> Int))
-(func GetMinutes (seconds) (divide seconds 60))
+(functype ConvertSecondsToMinutes (Seconds -> Minutes))
+(func ConvertSecondsToMinutes (seconds) (divide seconds 60))
 ```
+
+# Import
+- To import some porgram with defined functions and atoms from another file just write `import file.txt`. 
+- It should be written above the functions usage.
+- In implementation point of view, before running the lexical analysis we substitute the content of importing file in a program row where `import` was written.
 
 # Standard Library
 
-Our standart library will be substituted by such definitions:
-* `map` - Type is: `((Any -> Any) (Any) -> (Any))`
-* `filter` - Type is: `((Any -> Boolean) (Any) -> (Any))`
-* `foldl` - Type is: `((Any Any -> Any) Any (Any) -> (Any))`
-* `length` - Type is: `((Any) -> Int)`
-* `isempty` - Type is: `((Any) -> Boolean)`
+Our standard library has the following functions:
+* `(functype lastElement ((Any) -> Any))`
+* `(functype reverse ((Any) -> (Any)))`
+* `(functype getListWithoutLastElement ((Any) -> (Any)))`
+* `(functype getMinElement ((Any) -> Any))`
+* `(functype removeElement (Any (Any) -> (Any)))`
+* `(functype sort ((Any) -> (Any)))`
 
 To import standart library you need to write in source code:
 
-`(import standart.txt)`
+`import std.txt`
 
 After that you can use aforesaid functions in your code.
 
 # Nested definitions
 
-Our language support nested definitions. It means that it is possible to define a local variable/function in any scope.
+- Our language support nested definitions. It means that it is possible to define a local variable/function in any scope.
+- In implementation point of view, we keep the singleton stack of hashmaps. When the function should enter the local scope, we create new hasmap and put in in stack. All local function and atom definitions are stored in such hashmap. To get the outer scope atom we traverse through the stack. When we leave the local scope, the top stack's hasmap is deleted.
 
 Example:
 
 ```
-(setq x 55)
-(setq y 55)
+(setq x 55) ; define global x = 55
+(setq y 66) ; define global y = 66
 (prog (x y) (
-    (func helper () 42)
-    (setq x (helper))
-    (setq y 6)
+    (func helper () 42) ; define local function 'helper'
+    (setq x (helper)) ; define local x = 42
+    (setq y 6) ; define local y = 6
     (x y) ; (42 6)
 ))
-(x y) ; (55 55)
+; the 'helper' function doesn't exist anymore
+(x y) ; These x and y are the global ones (55 66)
 ```
 
 # Simple Constraint-Based Type Inference
 
-Reserved word `auto` is used for specifying ommitted types
+Reserved word `Auto` is used for specifying ommitted types
 
 ```
-(functype sum (auto auto -> auto))
+; Define a function 'sum'
+(functype sum (Auto Auto -> Auto)) 
 (func sum (a b) (plus a b))
-(sum 5 4)
-(sum 5.5 4) ; Error?
-(sum 4.4 2.3) ; Error?
+
+; Compiler checks that the function 'sum' is used for integers.
+; Therefore, 'sum' is resolved as (Int Int -> Int) function
+(sum 5 4) 
+
+; Since 'sum' was infered as (Int Int -> Int) function, here you'll get a compile error because arguments must be integers, not doubles.
+; (sum 4.4 2.3)
 ```
 
 # Typing rules
@@ -159,6 +192,7 @@ Comment lines `;`
 ```
 
 Create a variable `setq`
+`(functype setq (Any Any -> Unit))`
 ```
 (setq a 5) ; a has type Int
 (setq b 5.3) ; b has type Double
@@ -176,6 +210,8 @@ Reassignment
 ```
 
 `define` keyword
+`(functype define (Any Any -> Unit))`
+The user can't define an atom of types: `Unit`, `Any`, `Num`
 ```
 (define x Int) ; declare a variable e with type Int
 (setq x 5); assign an integer value
@@ -188,9 +224,12 @@ Reassignment
 ```
 
 `functype` keyword
-The syntax: (`functype` (`list of arguments types` -> `return type`)).
-You can declare the `functype` for a particular function only once above the `func`.
+- The syntax: (`functype` (`list of arguments types` -> `return type`)).
+- You can declare the `functype` for a particular function only once above the `func`.
+- `Unit` argument can be used only as a single type.
 ```
+(functype unitExample1 (Unit -> Int)) ; can use Unit as argument
+(functype unitExample1 (Unit Double -> Int)) ; can't use Unit. It should be single.
 (functype myEasyFunction (Int -> Double)) ; a function which takes Int as an argument and return Double
 
 (functype myMediumFunction (Int Boolean -> Double)) ; a function which takes two arguments: Int and Boolean and returns Double.
@@ -350,8 +389,8 @@ Syntax: (`let` `list of defined  variables` `in body`)
         currentMax
         (let 
             (
-                (setq first (head list))
-                (setq restList (tail list))
+                (first (head list))
+                (restList (tail list))
             )
             (cond (greater first currentMax)
                 (getMax first restList)
@@ -369,8 +408,8 @@ Syntax: (`let` `list of defined  variables` `in body`)
 ```
 (define x (Int, Double, Int))
 (setq x (3, 2.2, 30))
-(getI x 2) ; returns 2.2
-(setI x 2 4.4) ; now x = (3, 4.4, 30)
+(getAt x 2) ; returns 2.2
+(setAt x 2 4.4) ; now x = (3, 4.4, 30)
 ```
 
 Currying function
@@ -381,8 +420,8 @@ Currying function
         ()
         (let 
             (
-                (setq first (head lst))
-                (setq restLst (tail lst))
+                (first (head lst))
+                (restLst (tail lst))
             )
             (cond (greater first x) 
                     (cons first (moreThanX x restLst))
@@ -400,6 +439,34 @@ Currying function
 
 ; listResult will have values '(6 7)
 ```
+
+# Interpreter
+
+In the [interpreter](https://github.com/CompilersConstructionInnopolis/ACCPA/tree/main/src/main/java/interpreter) package there are classes related to AST interpretation.
+
+* [AtomsTable.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/AtomsTable.java) saves defined atoms and their values. This class is represented as a singleton. Atoms are stored in some local context. Atoms with similar name shadows atoms from outer scope. Each local context is perpesented as a HashMap. The hirerachy of local contexts is presented as a Stack. When you enter into some function or loop the interpreter calls `introduceLocalContext()` function to create a new temporary local context which will be deleted after leaving the form (`leaveLocalContext()` will be called).
+* [FunctionsTable.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/FunctionsTable.java) is similar to [AtomsTable.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/AtomsTable.java), but it stores defined user-functions.
+* [PredefinedFunction.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/PredefinedFunction.java) and [DefinedFunction.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/DefinedFunction.java) classes are utility functions to interpret a list as a function call and evaluate it.
+
+# Build project
+
+***Online interpreter***
+You can test the interpreter on this [website](https://plus-plus-plus.netlify.app)
+
+***Instructions for building the project***
+
+ 
+1. Сlone a repository of our project.
+2. Navigate to the folder of the project using the terminal.
+3. Run the command `mvn clean install`. This command will create a ‘target’ folder and an executable .jar file inside.
+ 
+***Instructions for using the prototype***
+
+1. Create a build of the application (see previous step)
+2. Navigate to the created ‘target’ folder.
+3. Run a command: `java -jar Compilers_Innopolis-1.0-SNAPSHOT.jar ../code/main.txt`
+	
+> Note: before running a command you need to enter a code of the program inside code/main.txt file. You can specify another path to the program file.
 
 
 # Demo program
