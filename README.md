@@ -12,15 +12,15 @@
 
 # Language Plus++
 
-- Functional Lisp-like language with static type system. 
+- Functional Lisp-like language with a static type system. 
 - The language is not purely functional.
 
 The language represents a sequence of elements. Elements can be:
-- **List**. The sequence of elements. They can be considered as just a sequence of homogenous elements or a list can be of a special form which represents a list as a function. In this case elements don't require to have the same type. The special form of a list is an S-expression, so each element is evalutated before a function call.
+- **List**. The sequence of elements. They can be considered as just a sequence of homogenous elements or a list can be of a special form which represents a list as a function. In this case, elements don't require to have the same type. The special form of a list is an S-expression, so each element is evaluated before a function call.
 - **Literal**. The basic values such as integers, doubles, booleans and strings.
-- **Atom**. Identifier of a variable which can be assigned to a literal or a list. Identifier can be written with a use of letters, digits and underscore. The name can't start with a digit and it must contain at least one letter.
-- **Function type**. A function declaration of input argument types and return type separated by `->`
-- **Tuple**. A sequence of heterogeneous elements separated by comma `,`.
+- **Atom**. Identifier of a variable which can be assigned to a literal or a list. An identifier can be written with the use of letters, digits and underscores. The name can't start with a digit and it must contain at least one letter.
+- **Function type**. A function declaration of input argument types and return types separated by `->`
+- **Tuple**. A sequence of heterogeneous elements separated by a comma `,`.
 
 # Grammar
 
@@ -43,14 +43,14 @@ Characters: { Letter }
 ```
 
 # Type Checker
-- Before interpretation complier runs the type checker which analasis AST asking each node it's type. Connected nodes compare their expected types with actual or infere them. Each node has set of rules which type of arguments it expects and what type of an argument it should return. For example, if the node is a condition which accepts a single argument of type boolean and returns some node of any type, then we take into account several things  `(cond BooleanCondition TrueBranch FalseBranch`:
-- `cond` has three children nodes that are represent branches(`TrueBranch` and `FalseBranch`) and `BooleanCondition`.
-- `BooleanCondition` node must return boolean.
-- Branches must return the same type. For this purpose we recursively check what each branch returns and then compare types.
-- The parant node (which calls `cond`) must provide external atom argument for `cond` of type boolean. Also, this parent node knows what `cond` returns since we checked it's branches. Therefore, we can conclude what the parent node should return. Thus, if we know that e.g. `cond` returns `Int`, but its parent node should return `Double`, then it's types error which we detected during the compilation.
-- if the node has `Auto` type, but it's children or parent provides some defined type for it (e.g. `String`). Then we can conclude that argument's type `Auto` is actually a String. That's how the type infrence works.
+- Before interpretation compiler runs the type checker which analysis AST asking each node its type. Connected nodes compare their expected types with actual or infer ones. Each node has a set of rules on which type of arguments it expects and what type of argument it should return. For example, if the node is a condition which accepts a single argument of type boolean and returns some node of any type, then we take into account several things  `(cond BooleanCondition TrueBranch FalseBranch`:
+- `cond` has three children nodes that represent branches(`TrueBranch` and `FalseBranch`) and `BooleanCondition`.
+- `BooleanCondition` node must return a boolean.
+- Branches must return the same type. For this purpose, we recursively check what each branch returns and then compare types.
+- The parent node (which calls `cond`) must provide an external atom argument for `cond` of type boolean. Also, this parent node knows what `cond` returns since we checked its branches. Therefore, we can conclude what the parent node should return. Thus, if we know that e.g. `cond` returns `Int`, but its parent node should return `Double`, then it's the types error which we detected during the compilation.
+- if the node has an `Auto` type, but its children or parent provides some defined type for it (e.g. `String`). Then we can conclude that argument's type `Auto` is actually a String. That's how the type inference works.
 
-In compiler implementation, to check that connected nodes passes and returns arguments of expected types, each AST node has the following methods
+In compiler implementation, to check that connected nodes pass and return arguments of expected types, each AST node has the following methods
 ```
 List<NodeType> getArgumentType(); // Get a list of argument types which node accepts
 void setArgumentType(List<NodeType>); // Set a list of argument types which node should accept. Call this method for type inference (if node had Auto type)
@@ -61,16 +61,16 @@ void setReturnType(NodeType type); // Set return type which node should provide.
 ## Check whether the typing is correct
 - For the `function` we should check if the provided arguments are the same types as declared in the `functype` keyword.
 If the argument is not Base type then we should recursively get the type of argument.
-- For the variable (atom) we can use `define` keyword to specify variable's type.
-- If the function accepts or return an atom of type `Any` or `Num` then it can be used for different arguments types (`Int` and `Double` will be acceptable for `Num`). In this case, possible excpetions would be detected only during the runtime.
+- For the variable (atom) we can use the `define` keyword to specify the variable's type.
+- If the function accepts or returns an atom of type `Any` or `Num` then it can be used for different argument types (`Int` and `Double` will be acceptable for `Num`). In this case, possible exceptions would be detected only during the runtime.
 
 ## Infer the type of expressions
 
 In our language type annotation in the source code is optional. 
-If type is not specified explicitly then it should be inferred by interpreter automatically. Alternatively, you can specify a type as unknown using `Auto`.
+If type is not specified explicitly then it should be inferred by the interpreter automatically. Alternatively, you can specify a type as unknown using `Auto`.
 
-- if the node's argument or the return type is `Auto` and such node does not have special rules of required types (*e.g. the `cond` has a rule that condition has a type of boolean*) and its connected nodes also can't conclude their required types then the type inference won't work during the compile time. So, it's not possible to traverse through nodes and detect their types if everything has type `Auto`.
-- if connected nodes have types `Any` and `Auto` then `Auto` could be only resolved as type of `Any`. However, we could get an type exception during the runtime because type checker was not be able to check these generic types.
+- if the node's argument or the return type is `Auto` and such node does not have special rules of required types (*e.g. the `cond` has a rule that condition has a type of boolean*) and its connected nodes also can't conclude their required types then the type inference won't work during the compile time. So, it's not possible to traverse through nodes and detect their types if everything has the type `Auto`.
+- if connected nodes have types `Any` and `Auto` then `Auto` could be only resolved as a type of `Any`. However, we could get a type exception during the runtime because the type checker was not able to check these generic types.
 
 # Base Types
 
@@ -83,10 +83,10 @@ Language has general-purpose types that are built into it:
     - `Boolean` - has values: `true`, `false`
 * Unit type (`Unit`). It indicates that a function accepts or returns nothing. 
 * String type (`String`). Any symbols between quotes signs "..."
-* Any type (`Any`). Parent of all types. It can be used in functions in which we don't care of variable's type.
+* Any type (`Any`). Parent of all types. It can be used in functions in which we don't care about the variable's type.
 * Homogeneous lists. A list is a sequence of elements separated by whitespaces and enclosed by parentheses. However, there are two types of lists in general.
-    1. The list with elements with the same type. So, this list is just simple list of elements.
-    2. However, list can be interpreted as an S-expression. So, compiler considers this list as a **function**. We call such list as a list with a special form. A list with a special form has the same syntax, but it is condidered as a function definition or a function call. It's elements don't require to have the same type (since it's not a simple sequence of homogeneous elements). Therefore, such list doesn't support classic operations on a list (e.g. `cons`, `tail`) since it represents a function.
+    1. The list with elements of the same type. So, this list is just a simple list of elements.
+    2. However, the list can be interpreted as an S-expression. So, the compiler considers this list as a **function**. We call such a list a list with a special form. A list with a special form has the same syntax, but it is considered as a function definition or a function call. Its elements don't require to have the same type (since it's not a simple sequence of homogeneous elements). Therefore, such a list doesn't support classic operations on a list (e.g. `cons`, `tail`) since it represents a function.
         - **Function definition**
             - The first element is an atom representing the function name
             - The second element is a list of arguments
@@ -95,12 +95,12 @@ Language has general-purpose types that are built into it:
             - The first element is an atom representing the function name
             - The second element is a list of arguments
     
-* Heterogeneous tuples. The tuple should have more than 1 element. The difference between tuples and lists is that tuple's elements are separated by comma. 
+* Heterogeneous tuples. The tuple should have more than 1 element. The difference between tuples and lists is that tuple's elements are separated by a comma. 
 
 
 # User-defined Terms and Types
 
-* User can define aliases with a use of primitives.
+* User can define aliases with the use of primitives.
 * Aliases can be defined in a local scope.
 ```
 (type Seconds Int)
@@ -111,9 +111,9 @@ Language has general-purpose types that are built into it:
 ```
 
 # Import
-- To import some porgram with defined functions and atoms from another file just write `import file.txt`. 
-- It should be written above the functions usage.
-- In implementation point of view, before running the lexical analysis we substitute the content of importing file in a program row where `import` was written.
+- To import some program with defined functions and atoms from another file just write `import file.txt`. 
+- It should be written above the usage of the functions.
+- From an implementation point of view, before running the lexical analysis we substitute the content of the imported file in a program row where `import` was written.
 
 # Standard Library
 
@@ -125,16 +125,16 @@ Our standard library has the following functions:
 * `(functype removeElement (Any (Any) -> (Any)))`
 * `(functype sort ((Any) -> (Any)))`
 
-To import standart library you need to write in source code:
+To import the standard library you need to write in the source code:
 
 `import std.txt`
 
-After that you can use aforesaid functions in your code.
+After that, you can use the aforesaid functions in your code.
 
 # Nested definitions
 
 - Our language support nested definitions. It means that it is possible to define a local variable/function in any scope.
-- In implementation point of view, we keep the singleton stack of hashmaps. When the function should enter the local scope, we create new hasmap and put in in stack. All local function and atom definitions are stored in such hashmap. To get the outer scope atom we traverse through the stack. When we leave the local scope, the top stack's hasmap is deleted.
+- From an implementation point of view, we keep the singleton stack of hashmaps. When the function should enter the local scope, we create a new hashmap and put it in the stack. All local function and atom definitions are stored in such a hashmap. To get the outer scope atom we traverse through the stack. When we leave the local scope, the top stack's hashmap is deleted.
 
 Example:
 
@@ -153,7 +153,7 @@ Example:
 
 # Simple Constraint-Based Type Inference
 
-Reserved word `Auto` is used for specifying ommitted types
+Reserved word `Auto` is used for specifying omitted types
 
 ```
 ; Define a function 'sum'
@@ -164,14 +164,14 @@ Reserved word `Auto` is used for specifying ommitted types
 ; Therefore, 'sum' is resolved as (Int Int -> Int) function
 (sum 5 4) 
 
-; Since 'sum' was infered as (Int Int -> Int) function, here you'll get a compile error because arguments must be integers, not doubles.
+; Since 'sum' was inferred as (Int Int -> Int) function, here you'll get a compile error because arguments must be integers, not doubles.
 ; (sum 4.4 2.3)
 ```
 
 # Typing rules
 
 * Type of the function : 
-Everything before `->` is types of arguments of function
+Everything before `->` is the type of argument of the function
 Everything after `->` is returned type of function
 ```
 (functype sum (Num Num -> Num)) ; function takes 2 arguments of type Num and return type Num
@@ -187,8 +187,8 @@ Everything after `->` is returned type of function
 
 Comment lines `;`
 ```
-; Everything after semicolon is a comment on this line
-; The compiler will ignore this part of code 
+; Everything after the semicolon is a comment on this line
+; The compiler will ignore this part of the code 
 ```
 
 Create a variable `setq`
@@ -206,7 +206,7 @@ Reassignment
 (setq x 6); x reassigned a value. It's still has a type Int
 ; (setq x 8.0) compile error. Can't reassign to Double since x was declared as Int
 (setq a 8)
-(setq x a); now x has value 8
+(setq x a); now x has a value of 8
 ```
 
 `define` keyword
@@ -265,7 +265,7 @@ x ; should output 13
 (func incrementByValue (n)
     (setq x (plus x n))
 )
-; The function accepts an argument n and increments outerscope variable x by n. The function itself returns nothing
+; The function accepts an argument n and increments outer scope variable x by n. The function itself returns nothing
 ```
 
 ```
@@ -274,7 +274,7 @@ x ; should output 13
 (func sideEffect ()
     (setq x (plus x 1))
 )
-; The function accepts nothing and returns nothing. It just increments outerscope variable x
+; The function accepts nothing and returns nothing. It just increments outer scope variable x
 ```
 
 Arithmetic functions
@@ -306,7 +306,7 @@ Comparisons
 
 `Cond` keyword
 Syntax: (`cond` `Boolean condition` `result if true` `result if false`)
-Result for `true` and `false` branches must have the same type.
+The result for `true` and `false` branches must have the same type.
 ```
 (setq a 5)
 (setq b 6)
@@ -323,15 +323,15 @@ Result for `true` and `false` branches must have the same type.
 ) ; compile error since the return type must be the same for both branches
 ```
 
-Lists. List is homogeneous.
-If the first element is a function name then such list is considered as a function call, the rest list's elements are function arguments.
+Lists. The list is homogeneous.
+If the first element is a function name then such a list is considered as a function call, the rest list's elements are function arguments.
 
 ```
 (plus 1 2) ; this is a function call
 
 (1 2 3) ; this is a list of integers
 
-; (1 5.23 true) compile error. List must be homogeneous
+; (1 5.23 true) compile error. The list must be homogeneous
 
 () ; empty list
 
@@ -340,7 +340,7 @@ If the first element is a function name then such list is considered as a functi
 ; (setq x (true false)) complie error since x is a list of integers, not booleans
 ```
 
-For function arguments we denote a list as `(T)` where `T` - is the list type.
+For function arguments, we denote a list as `(T)` where `T` - is the list type.
 ```
 (functype getMaxElement ((Int) -> Int)) ; the function accepts a list of integers and returns an integer number
 
@@ -416,7 +416,7 @@ Currying function
 ```
 (functype moreThanX (Int (Int) -> (Int)))
 (func moreThanX (x lst) (
-	(cond (isepmty lst) 
+    (cond (isepmty lst) 
         ()
         (let 
             (
@@ -444,7 +444,7 @@ Currying function
 
 In the [interpreter](https://github.com/CompilersConstructionInnopolis/ACCPA/tree/main/src/main/java/interpreter) package there are classes related to AST interpretation.
 
-* [AtomsTable.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/AtomsTable.java) saves defined atoms and their values. This class is represented as a singleton. Atoms are stored in some local context. Atoms with similar name shadows atoms from outer scope. Each local context is perpesented as a HashMap. The hirerachy of local contexts is presented as a Stack. When you enter into some function or loop the interpreter calls `introduceLocalContext()` function to create a new temporary local context which will be deleted after leaving the form (`leaveLocalContext()` will be called).
+* [AtomsTable.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/AtomsTable.java) saves defined atoms and their values. This class is represented as a singleton. Atoms are stored in some local context. Atoms with similar names shadows atoms from the outer scope. Each local context is represented as a HashMap. The hierarchy of local contexts is presented as a Stack. When you enter into some function or loop the interpreter calls the` introduceLocalContext()` function to create a new temporary local context which will be deleted after leaving the form (`leaveLocalContext()` will be called).
 * [FunctionsTable.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/FunctionsTable.java) is similar to [AtomsTable.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/AtomsTable.java), but it stores defined user-functions.
 * [PredefinedFunction.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/PredefinedFunction.java) and [DefinedFunction.java](https://github.com/CompilersConstructionInnopolis/ACCPA/blob/main/src/main/java/interpreter/DefinedFunction.java) classes are utility functions to interpret a list as a function call and evaluate it.
 
@@ -462,27 +462,27 @@ You can test the interpreter on this [website](https://plus-plus-plus.netlify.ap
  
 ***Instructions for using the prototype***
 
-1. Create a build of the application (see previous step)
+1. Create a build of the application (see the previous step)
 2. Navigate to the created ‘target’ folder.
 3. Run a command: `java -jar Compilers_Innopolis-1.0-SNAPSHOT.jar ../code/main.txt`
-	
-> Note: before running a command you need to enter a code of the program inside code/main.txt file. You can specify another path to the program file.
+    
+> Note: before running a command you need to enter a code of the program inside the code/main.txt file. You can specify another path to the program file.
 
 
 # Demo program
 
 ```
 ; sorting example
-(functype getMinElement ((Int) -> Int))	
+(functype getMinElement ((Int) -> Int)) 
 (functype removeElement (Int (Int) -> (Int)))
 (functype sort ((Int) -> (Int)))
 
 (func getMinElement (lst)
 (cond (isempty (tail lst))
- 		(head lst)
- 		(cond (less (head lst) (getMinElement (tail lst)))
- 		(head lst)
- 	(getMinElement (tail lst))))
+        (head lst)
+        (cond (less (head lst) (getMinElement (tail lst)))
+        (head lst)
+    (getMinElement (tail lst))))
 )
 
 (func removeElement (el lst)
@@ -491,7 +491,7 @@ You can test the interpreter on this [website](https://plus-plus-plus.netlify.ap
 
 (func sort (lst)
 (cond (isempty (tail lst))
- 	lst
+    lst
 (cons (getMinElement lst) (sort (removeElement (getMinElement lst) lst)) )
 )
 )
